@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { usePatient } from '../../context/PatientContext.jsx'
 
 export default function PatientRegister() {
   const navigate = useNavigate()
+  const { register } = usePatient()
   const [form, setForm] = useState({
-    fullName: '', email: '', phone: '', dob: '', password: '', confirmPassword: ''
+    fullName: '', email: '', phone: '', dob: '', patientId: '', password: '', confirmPassword: ''
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -23,17 +25,22 @@ export default function PatientRegister() {
       setError('Passwords do not match.')
       return
     }
+    if (!form.patientId) {
+      setError('Enter the patient ID provided by the clinic.')
+      return
+    }
     setError('')
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      navigate('/patient/login')
-    }, 1200)
+    register(form)
+      .then(() => navigate('/patient/dashboard'))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false))
   }
 
   const fields = [
     { label: 'Full Name *', name: 'fullName', type: 'text', placeholder: 'Arun Kumar' },
     { label: 'Email Address *', name: 'email', type: 'email', placeholder: 'arun@example.com' },
+    { label: 'Patient ID *', name: 'patientId', type: 'text', placeholder: 'MS-1001' },
     { label: 'Phone Number', name: 'phone', type: 'tel', placeholder: '+91 98765 43210' },
     { label: 'Date of Birth', name: 'dob', type: 'date', placeholder: '' },
     { label: 'Password *', name: 'password', type: 'password', placeholder: '••••••••' },

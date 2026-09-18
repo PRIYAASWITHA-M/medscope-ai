@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { usePatient } from '../../context/PatientContext.jsx'
 
 export default function PatientLogin() {
   const navigate = useNavigate()
+  const { login } = usePatient()
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -19,11 +21,12 @@ export default function PatientLogin() {
     }
     setError('')
     setLoading(true)
-    // Simulate login — replace with real API call
-    setTimeout(() => {
+    login(form.email, form.password)
+      .then(() => navigate('/patient/dashboard'))
+      .catch(err => setError(err.message))
+      .finally(() => {
       setLoading(false)
-      navigate('/patient/dashboard')
-    }, 1200)
+      })
   }
 
   return (

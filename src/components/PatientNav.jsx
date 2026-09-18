@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 
 const links = [
   { to: '/patient/dashboard',    label: 'Dashboard' },
+  { to: '/patient/insights',     label: '🧠 AI Insights' },
   { to: '/patient/appointments', label: 'Appointments' },
   { to: '/patient/documents',    label: 'Documents' },
   { to: '/upload',               label: 'Upload Report' },

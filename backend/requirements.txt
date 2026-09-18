@@ -1,14 +1,26 @@
 # MedScope AI — Python dependencies
-# Install with: pip install -r requirements.txt
+# Install: pip install -r requirements.txt
 
 # Core
 flask==3.0.3
 flask-cors==5.0.0
+python-dotenv==1.0.1
 
-# PDF extraction (install at least one)
-PyMuPDF==1.24.10        # primary — faster
-pdfplumber==0.11.4      # fallback
+# Auth
+PyJWT==2.9.0
+werkzeug==3.0.4
 
-# AI APIs (optional — only install the one you use)
-# google-generativeai==0.8.3   # for Gemini
-# openai==1.51.2               # for OpenAI GPT
+# PDF extraction
+PyMuPDF==1.24.10
+pdfplumber==0.11.4
+
+# OCR (optional — for scanned PDFs)
+# pytesseract==0.3.13
+# Pillow==10.4.0
+
+# AI APIs (install the one you use)
+google-generativeai==0.8.3
+# openai==1.51.2
+
+# Production server
+gunicorn==23.0.0

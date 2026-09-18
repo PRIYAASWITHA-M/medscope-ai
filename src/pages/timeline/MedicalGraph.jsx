@@ -1,106 +1,147 @@
 import { Link } from 'react-router-dom'
+import { usePatient } from '../../context/PatientContext.jsx'
 
-const nodes = [
-  { id: 1, label: 'Fever\nVisit',   icon: '🤒', date: 'Jan 2026', color: 'border-orange-400 text-orange-300' },
-  { id: 2, label: 'Blood\nTest',    icon: '🩸', date: 'Jan 2026', color: 'border-red-400 text-red-300' },
-  { id: 3, label: 'Diabetes\nDx',   icon: '🏥', date: 'Mar 2026', color: 'border-purple-400 text-purple-300' },
-  { id: 4, label: 'Kidney\nCheckup',icon: '🫘', date: 'Aug 2026', color: 'border-teal-400 text-teal-300' },
-]
+const typeColor = {
+  Event:     { border: 'border-orange-400', text: 'text-orange-300', bg: 'bg-orange-500/10', line: '#f97316' },
+  Diagnosis: { border: 'border-purple-400', text: 'text-purple-300', bg: 'bg-purple-500/10', line: '#a855f7' },
+  Medicine:  { border: 'border-teal-400',   text: 'text-teal-300',   bg: 'bg-teal-500/10',   line: '#14b8a6' },
+}
 
-function Node({ node }) {
+const typeIcon = { Event: '🩺', Diagnosis: '🏥', Medicine: '💊' }
+
+function GraphNode({ item, index }) {
+  const c = typeColor[item.type] || typeColor.Event
   return (
     <div className="flex flex-col items-center">
-      <div className={`w-28 h-28 rounded-full bg-[#1e293b] border-2 ${node.color} flex flex-col items-center justify-center text-center shadow-lg hover:-translate-y-1 transition-transform duration-200 cursor-default`}>
-        <span className="text-2xl mb-1">{node.icon}</span>
-        <span className="text-xs font-semibold text-white whitespace-pre-line leading-tight">
-          {node.label}
-        </span>
-        <span className="text-xs text-slate-500 mt-1">{node.date}</span>
+      <div className={`w-28 h-28 rounded-full ${c.bg} border-2 ${c.border} flex flex-col items-center justify-center text-center shadow-lg hover:-translate-y-1 transition-transform duration-200 cursor-default p-2`}>
+        <span className="text-xl mb-1">{typeIcon[item.type]}</span>
+        <span className="text-xs font-semibold text-white leading-tight line-clamp-2">{item.title.replace('Prescribed: ', '').replace('Diagnosis: ', '').slice(0, 28)}</span>
+        <span className={`text-xs mt-0.5 ${c.text}`}>{item.date.slice(0, 8)}</span>
       </div>
     </div>
   )
 }
 
-function Connector() {
+function Arrow({ color = '#14b8a6' }) {
   return (
-    <div className="flex items-center justify-center px-1">
-      {/* Horizontal line with arrow */}
-      <div className="flex items-center gap-0">
-        <div className="h-0.5 w-12 sm:w-20 bg-gradient-to-r from-teal-500 to-teal-400" />
-        <div className="w-0 h-0 border-t-4 border-t-transparent border-b-4 border-b-transparent border-l-8 border-l-teal-400" />
-      </div>
+    <div className="flex items-center px-1">
+      <div className="h-0.5 w-10 sm:w-16" style={{ background: color }} />
+      <div className="w-0 h-0 border-t-4 border-b-4 border-t-transparent border-b-transparent border-l-8" style={{ borderLeftColor: color }} />
     </div>
   )
 }
 
 export default function MedicalGraph() {
+  const { currentPatient, getTimeline } = usePatient()
+  const timeline = getTimeline(currentPatient.id)
+
+  // Group timeline items into rows of 4 for display
+  const rows = []
+  for (let i = 0; i < timeline.length; i += 4) {
+    rows.push(timeline.slice(i, i + 4))
+  }
+
+  const docSources = [...new Set(timeline.map(t => t.source))]
+
   return (
     <div className="min-h-screen bg-[#0f172a] text-white">
-
-      {/* Header */}
-      <header className="bg-teal-600 py-5 px-6 text-center shadow-lg">
-        <h1 className="text-2xl font-bold tracking-wide">Medical Relationship Graph</h1>
-        <p className="text-teal-100 text-sm mt-1">Visual progression of medical events</p>
+      <header className="bg-teal-600 py-5 px-6 shadow-lg">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">Medical Relationship Graph</h1>
+            <p className="text-teal-100 text-sm mt-0.5">{currentPatient.name} · Auto-generated from uploaded documents</p>
+          </div>
+          <Link to="/upload" className="text-xs px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition">
+            + Upload Doc
+          </Link>
+        </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-12">
+      <div className="max-w-5xl mx-auto px-4 py-10">
 
-        {/* Legend */}
-        <div className="flex flex-wrap justify-center gap-3 mb-10">
-          {nodes.map(n => (
-            <span key={n.id} className={`text-xs px-3 py-1 rounded-full border ${n.color} bg-slate-800/50`}>
-              {n.icon} {n.label.replace('\n', ' ')}
-            </span>
-          ))}
-        </div>
-
-        {/* Graph — horizontal chain */}
-        <div className="flex items-center justify-center flex-wrap gap-y-8">
-          {nodes.map((node, i) => (
-            <div key={node.id} className="flex items-center">
-              <Node node={node} />
-              {i < nodes.length - 1 && <Connector />}
-            </div>
-          ))}
-        </div>
-
-        {/* Relationship explanation */}
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Stats bar */}
+        <div className="flex flex-wrap gap-3 mb-8 justify-center">
           {[
-            { from: 'Fever Visit', to: 'Blood Test',    note: 'Blood test ordered following fever consultation.' },
-            { from: 'Blood Test',  to: 'Diabetes Dx',   note: 'Elevated blood sugar led to diabetes diagnosis.' },
-            { from: 'Diabetes Dx', to: 'Kidney Checkup',note: 'Kidney monitoring recommended for diabetic patients.' },
-          ].map(r => (
-            <div key={r.from} className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 text-sm">
-              <p className="text-teal-400 font-semibold mb-1">{r.from} → {r.to}</p>
-              <p className="text-slate-400 leading-relaxed">{r.note}</p>
+            { label: 'Events',    count: timeline.filter(t => t.type === 'Event').length,     icon: '🩺', color: 'border-orange-500/40 bg-orange-500/10 text-orange-300' },
+            { label: 'Diagnoses', count: timeline.filter(t => t.type === 'Diagnosis').length, icon: '🏥', color: 'border-purple-500/40 bg-purple-500/10 text-purple-300' },
+            { label: 'Medicines', count: timeline.filter(t => t.type === 'Medicine').length,  icon: '💊', color: 'border-teal-500/40 bg-teal-500/10 text-teal-300'       },
+            { label: 'Documents', count: docSources.length,                                   icon: '📄', color: 'border-slate-500/40 bg-slate-500/10 text-slate-300'    },
+          ].map(s => (
+            <div key={s.label} className={`px-4 py-2 rounded-xl border text-sm font-semibold ${s.color} flex items-center gap-2`}>
+              <span>{s.icon}</span>{s.count} {s.label}
             </div>
           ))}
         </div>
 
-        {/* AI insight */}
-        <div className="mt-6 p-4 bg-teal-900/30 border border-teal-500/20 rounded-xl text-sm text-slate-300 leading-relaxed">
-          <strong className="text-teal-300">🤖 AI Insight: </strong>
-          The patient's medical journey shows a clear progression from an initial fever consultation
-          to a diabetes diagnosis, with proactive follow-up care through kidney monitoring.
-        </div>
+        {timeline.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-6xl mb-4">📊</p>
+            <p className="text-slate-400 text-lg font-medium">Graph is empty</p>
+            <p className="text-slate-500 text-sm mt-2 mb-6">Upload documents to auto-generate the medical relationship graph</p>
+            <Link to="/upload" className="px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-semibold text-sm transition">
+              Upload Document →
+            </Link>
+          </div>
+        ) : (
+          <>
+            {/* Graph rows */}
+            <div className="space-y-8">
+              {rows.map((row, rowIdx) => (
+                <div key={rowIdx}>
+                  <div className="flex items-center justify-center flex-wrap">
+                    {row.map((item, i) => (
+                      <div key={i} className="flex items-center">
+                        <GraphNode item={item} index={rowIdx * 4 + i} />
+                        {i < row.length - 1 && (
+                          <Arrow color={typeColor[row[i + 1]?.type]?.line || '#14b8a6'} />
+                        )}
+                      </div>
+                    ))}
+                    {/* Connector to next row */}
+                    {rowIdx < rows.length - 1 && (
+                      <div className="w-full flex justify-end pr-14 mt-1">
+                        <div className="flex flex-col items-center">
+                          <div className="h-6 w-0.5 bg-teal-500/50" />
+                          <div className="text-teal-500 text-xs">↓</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
 
-        {/* Navigation */}
-        <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-          <Link
-            to="/timeline"
-            className="px-8 py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-semibold text-sm transition text-center"
-          >
-            ← Back to Timeline
+            {/* Source documents */}
+            <div className="mt-10">
+              <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-3">📎 Source Documents</p>
+              <div className="flex flex-wrap gap-2">
+                {docSources.map(src => (
+                  <span key={src} className="px-3 py-1 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-400">
+                    📄 {src}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* AI insight */}
+            <div className="mt-6 p-4 bg-teal-900/30 border border-teal-500/20 rounded-xl text-sm text-slate-300 leading-relaxed">
+              <strong className="text-teal-300">🤖 AI Insight: </strong>
+              {timeline.filter(t => t.type === 'Diagnosis').length > 0
+                ? `${currentPatient.name}'s medical history shows ${timeline.filter(t => t.type === 'Diagnosis').length} diagnosis record(s) with ${timeline.filter(t => t.type === 'Medicine').length} prescription event(s). Graph auto-updates with each new document upload.`
+                : `${currentPatient.name} has ${timeline.length} medical event(s) recorded. No diagnosis detected yet. Upload more documents to build a richer medical graph.`
+              }
+            </div>
+          </>
+        )}
+
+        <div className="mt-8 flex gap-3 justify-center">
+          <Link to="/timeline" className="px-8 py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-semibold text-sm transition text-center">
+            ← Timeline View
           </Link>
-          <Link
-            to="/patient/dashboard"
-            className="px-8 py-3 rounded-xl border border-slate-600 hover:border-teal-500 text-slate-300 hover:text-teal-400 font-semibold text-sm transition text-center"
-          >
+          <Link to="/patient/dashboard" className="px-8 py-3 rounded-xl border border-slate-600 hover:border-teal-500 text-slate-300 hover:text-teal-400 font-semibold text-sm transition text-center">
             Dashboard
           </Link>
         </div>
-
       </div>
     </div>
   )
