@@ -23,11 +23,14 @@ load_dotenv()
 
 # ── App setup ─────────────────────────────────────────────────────
 app = Flask(__name__)
-CORS(app, origins=[
+allowed_origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://*.vercel.app",   # allow Vercel preview deployments
-])
+    "https://medscope-ai-izd0.onrender.com",
+]
+if os.getenv("FRONTEND_URL"):
+    allowed_origins.append(os.getenv("FRONTEND_URL").rstrip("/"))
+CORS(app, origins=allowed_origins)
 
 app.config["SECRET_KEY"]          = os.getenv("SECRET_KEY", "medscope-dev-secret-change-in-prod")
 app.config["JWT_EXPIRY_HOURS"]    = 24
